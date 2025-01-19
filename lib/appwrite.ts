@@ -12,16 +12,14 @@ import * as Linking from "expo-linking";
 import { openAuthSessionAsync } from "expo-web-browser";
 
 export const config = {
-  platform: "com.jsm.restate",
+  platform: "com.restate",
   endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT,
   projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
   databaseId: process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID,
-  galleriesCollectionId:
-    process.env.EXPO_PUBLIC_APPWRITE_GALLERIES_COLLECTION_ID,
+  galleriesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_GALLERIES_COLLECTION_ID,
   reviewsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_REVIEWS_COLLECTION_ID,
   agentsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_AGENTS_COLLECTION_ID,
-  propertiesCollectionId:
-    process.env.EXPO_PUBLIC_APPWRITE_PROPERTIES_COLLECTION_ID,
+  propertiesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_PROPERTIES_COLLECTION_ID,
   bucketId: process.env.EXPO_PUBLIC_APPWRITE_BUCKET_ID,
 };
 
@@ -36,37 +34,33 @@ export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
 
-export async function login() {
+export const login = async () => {
   try {
-    const redirectUri = Linking.createURL("/");
+      const redirectUri = Linking.createURL('/');
+      const response = await account.createOAuth2Token(OAuthProvider.Google, redirectUri);
 
-    const response = await account.createOAuth2Token(
-      OAuthProvider.Google,
-      redirectUri
-    );
-    if (!response) throw new Error("Create OAuth2 token failed");
+      if (!response) throw new Error("login failed in oauth provider!");
 
-    const browserResult = await openAuthSessionAsync(
-      response.toString(),
-      redirectUri
-    );
-    if (browserResult.type !== "success")
-      throw new Error("Create OAuth2 token failed");
+      const browserResult = await openAuthSessionAsync(response.toString(), redirectUri);
+      console.log("Browser Result:", browserResult);
 
-    const url = new URL(browserResult.url);
-    const secret = url.searchParams.get("secret")?.toString();
-    const userId = url.searchParams.get("userId")?.toString();
-    if (!secret || !userId) throw new Error("Create OAuth2 token failed");
+      if (browserResult.type !== 'success') throw new Error('Browser login failed');
 
-    const session = await account.createSession(userId, secret);
-    if (!session) throw new Error("Failed to create session");
+      const url = new URL(browserResult.url);
+      const secret = url.searchParams.get('secret');
+      const userId = url.searchParams.get('userId');
 
-    return true;
+      if (!secret || !userId) throw new Error('Failed to retrieve user ID or secret');
+
+      const session = await account.createSession(userId, secret);
+      console.log("Session created:", session);
+
+      return session;
   } catch (error) {
-    console.error(error);
-    return false;
+      console.error(error);
+      return false;
   }
-}
+};
 
 export async function logout() {
   try {

@@ -1,6 +1,7 @@
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  Alert,
   Image,
   ScrollView,
   Text,
@@ -10,9 +11,33 @@ import {
 
 import icons from "@/constants/icons";
 import images from "@/constants/images";
+import { login } from "@/lib/appwrite";
+import { useGlobalContext } from "@/lib/global-provider";
+import { Redirect } from "expo-router";
+
+import * as WebBrowser from 'expo-web-browser';
 
 const Auth = () => {
-  const handleLogin = async () => {};
+  const { refetch, loading, isLogged } = useGlobalContext();
+
+  if (!loading && isLogged) return <Redirect href="/" />;
+
+  const handleLogin = async () => {
+    try {
+      await WebBrowser.warmUpAsync(); 
+      const result = await login();
+      if (result) {
+        refetch({});
+      } else {
+        Alert.alert("Error", "Failed to login");
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Failed to login");
+    } finally {
+      await WebBrowser.coolDownAsync();
+    }
+  };
 
   return (
     <SafeAreaView className="bg-white h-full">
@@ -29,16 +54,16 @@ const Auth = () => {
 
         <View className="px-10">
           <Text className="text-base text-center uppercase font-rubik text-black-200">
-            Welcome To Real Scout
+            Welcome To ReState
           </Text>
 
           <Text className="text-3xl font-rubik-bold text-black-300 text-center mt-2">
-            Let's Get You Closer To {"\n"}
+            Let's Get You Closer to {"\n"}
             <Text className="text-primary-300">Your Ideal Home</Text>
           </Text>
 
           <Text className="text-lg font-rubik text-black-200 text-center mt-12">
-            Login to Real Scout with Google
+            Login to ReState with Google
           </Text>
 
           <TouchableOpacity
